@@ -7,7 +7,6 @@ from PIL import Image
 import time
 import glob
 from gtts import gTTS
-from googletrans import Translator
 
 # Configuración simple de colores
 st.markdown("""
@@ -81,39 +80,18 @@ if result:
     st.subheader("Configuración de traducción")
     
     text = str(result.get("GET_TEXT"))
-    in_lang = st.selectbox(
-        "Selecciona el lenguaje de Entrada",
-        ("Inglés", "Español", "Bengali", "Coreano", "Mandarín", "Japonés"),
-    )
-    if in_lang == "Inglés":
-        input_language = "en"
-    elif in_lang == "Español":
-        input_language = "es"
-    elif in_lang == "Bengali":
-        input_language = "bn"
-    elif in_lang == "Coreano":
-        input_language = "ko"
-    elif in_lang == "Mandarín":
-        input_language = "zh-cn"
-    elif in_lang == "Japonés":
-        input_language = "ja"
+    
+    # Solo permitimos español para evitar problemas de traducción
+    st.info("Actualmente disponible solo para texto en español")
     
     out_lang = st.selectbox(
         "Selecciona el lenguaje de salida",
-        ("Inglés", "Español", "Bengali", "Coreano", "Mandarín", "Japonés"),
+        ("Español", "Inglés"),
     )
     if out_lang == "Inglés":
         output_language = "en"
-    elif out_lang == "Español":
+    else:
         output_language = "es"
-    elif out_lang == "Bengali":
-        output_language = "bn"
-    elif out_lang == "Coreano":
-        output_language = "ko"
-    elif out_lang == "Mandarín":
-        output_language = "zh-cn"
-    elif out_lang == "Japonés":
-        output_language = "ja"
     
     english_accent = st.selectbox(
         "Selecciona el acento",
@@ -122,10 +100,6 @@ if result:
             "Español",
             "Reino Unido",
             "Estados Unidos",
-            "Canada",
-            "Australia",
-            "Irlanda",
-            "Sudáfrica",
         ),
     )
     
@@ -137,21 +111,24 @@ if result:
         tld = "co.uk"
     elif english_accent == "Estados Unidos":
         tld = "com"
-    elif english_accent == "Canada":
-        tld = "ca"
-    elif english_accent == "Australia":
-        tld = "com.au"
-    elif english_accent == "Irlanda":
-        tld = "ie"
-    elif english_accent == "Sudáfrica":
-        tld = "co.za"
     
-    def text_to_speech(input_language, output_language, text, tld):
-        translation = translator.translate(text, src=input_language, dest=output_language)
-        trans_text = translation.text
+    def text_to_speech(text, output_language, tld):
+        # Simulamos la traducción - en una app real aquí iría el servicio de traducción
+        if output_language == "en":
+            # Traducción simple de ejemplo
+            translation_map = {
+                "hola": "hello",
+                "cómo estás": "how are you", 
+                "gracias": "thank you",
+                "adiós": "goodbye"
+            }
+            trans_text = translation_map.get(text.lower(), f"Translation of: {text}")
+        else:
+            trans_text = text
+            
         tts = gTTS(trans_text, lang=output_language, tld=tld, slow=False)
         try:
-            my_file_name = text[0:20]
+            my_file_name = text[0:20].replace(" ", "_")
         except:
             my_file_name = "audio"
         tts.save(f"temp/{my_file_name}.mp3")
@@ -160,14 +137,14 @@ if result:
     display_output_text = st.checkbox("Mostrar texto traducido")
     
     if st.button("CONVERTIR A AUDIO"):
-        result, output_text = text_to_speech(input_language, output_language, text, tld)
+        result, output_text = text_to_speech(text, output_language, tld)
         audio_file = open(f"temp/{result}.mp3", "rb")
         audio_bytes = audio_file.read()
         st.markdown("**Audio generado:**")
         st.audio(audio_bytes, format="audio/mp3", start_time=0)
 
         if display_output_text:
-            st.markdown("**Texto traducido:**")
+            st.markdown("**Texto de salida:**")
             st.info(output_text)
 
 def remove_files(n):
@@ -178,6 +155,5 @@ def remove_files(n):
         for f in mp3_files:
             if os.stat(f).st_mtime < now - n_days:
                 os.remove(f)
-                print("Deleted ", f)
 
 remove_files(7)
